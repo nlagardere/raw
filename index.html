@@ -113,6 +113,19 @@ html,body{height:100%;background:#111;font-family:'Space Mono',monospace;color:v
 .abtn.pri{background:var(--ink);color:var(--cream)}
 .abtn:not(.pri):hover{background:rgba(26,26,24,.06)}
 
+/* RECEIVED REQUESTS */
+.req-section{margin-bottom:24px}
+.req-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:4px}
+.req-sub{font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+.req-card{border:1.5px solid var(--ink);margin-bottom:10px}
+.req-top{padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.req-label{font-size:11px;font-weight:700;letter-spacing:1px}
+.req-platform{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+.req-actions{padding:9px 13px;border-top:1.5px solid var(--ink);display:flex;gap:7px}
+.req-revealed{padding:12px 14px;background:rgba(61,184,122,.08);border-top:1.5px solid var(--weird);font-size:10px;letter-spacing:1px;color:var(--weird)}
+.req-sent{padding:12px 14px;border-top:1.5px solid var(--ink);font-size:10px;color:var(--muted);letter-spacing:1px}
+.divider{border:none;border-top:2px solid var(--ink);margin:20px 0}
+
 /* VOTE BANNER */
 .vote-banner{background:var(--joy);border-bottom:2px solid var(--ink);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .vote-label{font-size:9px;letter-spacing:2px;color:var(--ink);font-weight:700}
@@ -274,8 +287,16 @@ html,body{height:100%;background:#111;font-family:'Space Mono',monospace;color:v
       <button class="vote-btn" onclick="openVoteModal()">VOTER ›</button>
     </div>
     <div class="cscroll">
+      <!-- DEMANDES REÇUES -->
+      <div class="req-section">
+        <div class="req-title">MES DEMANDES</div>
+        <div class="req-sub">Des gens ont été touchés par ton post.<br>Choisis ce que tu révèles si tu acceptes.</div>
+        <div id="req-list"><div style="font-size:10px;color:var(--muted);letter-spacing:1px">AUCUNE DEMANDE POUR L'INSTANT</div></div>
+      </div>
+      <hr class="divider">
+      <!-- CONNECTER AVEC QUELQU'UN -->
       <div class="ch">
-        <div class="ch-title">QUELQU'UN T'A TOUCHÉ ?</div>
+        <div class="ch-title">CONNECTER ?</div>
         <div class="ch-sub">Ces personnes ont posté aujourd'hui.<br>Connecte si leur photo te parle.</div>
       </div>
       <div id="clist"></div>
@@ -318,6 +339,16 @@ html,body{height:100%;background:#111;font-family:'Space Mono',monospace;color:v
       <div class="modal-sub">Vote pour la question de demain.</div>
       <div class="ropts" id="vote-opts"></div>
       <button class="cancel" onclick="closeModal('modal-vote')">FERMER</button>
+    </div>
+  </div>
+
+  <!-- REVEAL MODAL -->
+  <div class="modal-bg" id="modal-reveal">
+    <div class="modal-panel">
+      <div class="modal-title">TU ACCEPTES ?</div>
+      <div class="modal-sub">Choisis ce que tu révèles à cette personne.<br>Elle recevra ta réponse immédiatement.</div>
+      <div class="ropts" id="reveal-opts"></div>
+      <button class="cancel" onclick="closeModal('modal-reveal')">REFUSER</button>
     </div>
   </div>
 
@@ -525,23 +556,22 @@ function renderFeed() {
 // ─── DELETE POST ───
 async function deletePost(postId, photoUrl) {
   if (!confirm('Supprimer ton post ? Cette action est irréversible.')) return;
-  
-  // Supprime en DB d'abord
-  const {error} = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
-  
-  if (error) { showToast('ERREUR: ' + error.message); return; }
-
   // Supprime la photo du storage
   if (photoUrl) {
-    const parts = photoUrl.split('/photos/');
-    if (parts[1]) await sb.storage.from('photos').remove([decodeURIComponent(parts[1])]);
+    const filename = photoUrl.split('/photos/')[1];
+    if (filename) await sb.storage.from('photos').remove([filename]);
   }
-
-  myPostToday = null;
-  feedPosts = feedPosts.filter(p => p.id !== postId);
-  updatePostScreen();
-  renderFeed();
-  showToast('POST SUPPRIMÉ ✓');
+  // Supprime le post en DB
+  const {error} = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
+  if (!error) {
+    myPostToday = null;
+    updatePostScreen();
+    feedPosts = feedPosts.filter(p => p.id !== postId);
+    renderFeed();
+    showToast('POST SUPPRIMÉ ✓');
+  } else {
+    showToast('ERREUR: ' + error.message);
+  }
 }
 
 // ─── REALTIME ───
@@ -657,46 +687,173 @@ async function submitPost() {
   goTo('feed');
 }
 
-// ─── CONNECT LIST ───
+// ─── CONNECT LIST (posts des autres) ───
 async function loadConnectList() {
   const today = new Date().toISOString().split('T')[0];
+
+  // Posts des autres
   const {data} = await sb.from('posts')
     .select('*')
     .gte('created_at', today + 'T00:00:00')
     .neq('user_id', currentUser?.id || '')
     .order('created_at', {ascending: false});
 
+  // Mes connexions envoyées
+  const {data: sent} = await sb.from('connections')
+    .select('to_post_id, status, reveal_value')
+    .eq('from_user_id', currentUser.id);
+  const sentMap = {};
+  (sent || []).forEach(c => sentMap[c.to_post_id] = c);
+
   const clist = document.getElementById('clist');
   if (!data || data.length === 0) {
-    clist.innerHTML = '<div style="font-size:10px;color:var(--muted);letter-spacing:1px">AUCUN POST AUJOURD\'HUI ENCORE</div>';
+    clist.innerHTML = '<div style="font-size:10px;color:var(--muted);letter-spacing:1px;padding-bottom:20px">AUCUN POST AUJOURD\'HUI ENCORE</div>';
+  } else {
+    clist.innerHTML = data.map((p, i) => {
+      const e = EMO[p.emotion] || EMO.weird;
+      const bg = BGS[i % BGS.length];
+      const sym = SYM[i % SYM.length];
+      const time = timeSince(p.created_at);
+      const conn = sentMap[p.id];
+      const thumbHtml = p.photo_url
+        ? `<img src="${p.photo_url}" style="width:80px;height:80px;object-fit:cover">`
+        : `<div style="width:80px;height:80px;background:${bg};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:rgba(26,26,24,.18)">${sym}</div>`;
+      let actHtml;
+      if (conn && conn.status === 'accepted' && conn.reveal_value) {
+        actHtml = `<div class="req-revealed">✓ A RÉVÉLÉ : ${conn.reveal_value}</div>`;
+      } else if (conn && conn.status === 'declined') {
+        actHtml = `<div class="req-sent">A REFUSÉ LA CONNEXION</div>`;
+      } else if (conn) {
+        actHtml = `<div class="req-sent">DEMANDE ENVOYÉE — EN ATTENTE</div>`;
+      } else {
+        actHtml = `<div class="cactions">
+          <button class="abtn pri" onclick="openConnectModal('${p.id}')">CONNECTER</button>
+          <button class="abtn" onclick="document.getElementById('cc${p.id}').style.opacity='.3'">PASSER</button>
+        </div>`;
+      }
+      return `<div class="ccard" id="cc${p.id}">
+        <div class="ctop">
+          <div class="cph">${thumbHtml}</div>
+          <div class="cinfo">
+            <div class="cemo"><span class="edot" style="background:${e.c}"></span>${e.l}</div>
+            <div class="ctime2">${time}</div>
+          </div>
+        </div>
+        ${actHtml}
+      </div>`;
+    }).join('');
+  }
+
+  // Demandes reçues sur mon post
+  await loadReceivedRequests();
+}
+
+// ─── DEMANDES REÇUES ───
+let currentRevealConnectionId = null;
+
+async function loadReceivedRequests() {
+  if (!myPostToday) {
+    document.getElementById('req-list').innerHTML = '<div style="font-size:10px;color:var(--muted);letter-spacing:1px">POSTE AUJOURD\'HUI POUR RECEVOIR DES DEMANDES</div>';
     return;
   }
 
-  clist.innerHTML = data.map((p, i) => {
-    const e = EMO[p.emotion] || EMO.weird;
-    const bg = BGS[i % BGS.length];
-    const sym = SYM[i % SYM.length];
-    const time = timeSince(p.created_at);
-    const thumbHtml = p.photo_url
-      ? `<img src="${p.photo_url}" style="width:80px;height:80px;object-fit:cover">`
-      : `<div style="width:80px;height:80px;background:${bg};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:rgba(26,26,24,.18)">${sym}</div>`;
-    return `<div class="ccard" id="cc${p.id}">
-      <div class="ctop">
-        <div class="cph">${thumbHtml}</div>
-        <div class="cinfo">
-          <div class="cemo"><span class="edot" style="background:${e.c}"></span>${e.l}</div>
-          <div class="ctime2">${time}</div>
+  const {data} = await sb.from('connections')
+    .select('*')
+    .eq('to_post_id', myPostToday.id)
+    .order('created_at', {ascending: false});
+
+  const reqList = document.getElementById('req-list');
+  if (!data || data.length === 0) {
+    reqList.innerHTML = '<div style="font-size:10px;color:var(--muted);letter-spacing:1px">AUCUNE DEMANDE POUR L\'INSTANT</div>';
+    // Masque le notif dot
+    document.getElementById('notif-dot').style.display = 'none';
+    return;
+  }
+
+  const pending = data.filter(c => c.status === 'pending');
+  if (pending.length > 0) {
+    document.getElementById('notif-dot').style.display = 'block';
+  }
+
+  const PLATFORM_LABELS = {instagram:'INSTAGRAM',snapchat:'SNAPCHAT',numero:'NUMÉRO',message:'MESSAGE ANONYME'};
+
+  reqList.innerHTML = data.map(c => {
+    const plat = PLATFORM_LABELS[c.platform] || c.platform.toUpperCase();
+    const time = timeSince(c.created_at);
+    if (c.status === 'accepted') {
+      return `<div class="req-card">
+        <div class="req-top">
+          <div><div class="req-label">DEMANDE ACCEPTÉE</div><div class="req-platform">VIA ${plat} · ${time}</div></div>
+          <span class="sent-badge">✓</span>
         </div>
-      </div>
-      <div class="cactions">
-        <button class="abtn pri" onclick="openConnectModal('${p.id}')">CONNECTER</button>
-        <button class="abtn" onclick="document.getElementById('cc${p.id}').style.opacity='.3'">PASSER</button>
-      </div>
-    </div>`;
+        <div class="req-revealed">Tu as révélé : ${c.reveal_value}</div>
+      </div>`;
+    } else if (c.status === 'declined') {
+      return `<div class="req-card">
+        <div class="req-top">
+          <div><div class="req-label" style="color:var(--muted)">REFUSÉE</div><div class="req-platform">VIA ${plat} · ${time}</div></div>
+        </div>
+      </div>`;
+    } else {
+      return `<div class="req-card">
+        <div class="req-top">
+          <div><div class="req-label">QUELQU'UN VEUT TE CONNECTER</div><div class="req-platform">VIA ${plat} · ${time}</div></div>
+        </div>
+        <div class="req-actions">
+          <button class="abtn pri" onclick="openRevealModal('${c.id}','${c.platform}')">RÉPONDRE</button>
+          <button class="abtn" onclick="declineRequest('${c.id}')">REFUSER</button>
+        </div>
+      </div>`;
+    }
   }).join('');
 }
 
-// ─── CONNECT MODAL ───
+function openRevealModal(connectionId, platform) {
+  currentRevealConnectionId = connectionId;
+  const PLATFORM_LABELS = {instagram:'ton @Instagram',snapchat:'ton Snapchat',numero:'ton numéro',message:'un message anonyme'};
+  const hint = PLATFORM_LABELS[platform] || 'tes infos';
+  document.getElementById('reveal-opts').innerHTML = `
+    <button class="ropt" onclick="acceptReveal('${platform}')">
+      <span class="rplat">PARTAGER ${hint.toUpperCase()}</span>
+      <span class="rhint">Il/elle verra tes infos</span>
+    </button>
+    <button class="ropt" onclick="acceptRevealCustom()">
+      <span class="rplat">AUTRE CHOSE</span>
+      <span class="rhint">Entrer manuellement</span>
+    </button>
+  `;
+  document.getElementById('modal-reveal').classList.add('open');
+}
+
+async function acceptReveal(platform) {
+  const val = prompt(`Entre ta valeur (ex: @tonpseudo, 06XXXXXXXX...)`);
+  if (!val) return;
+  closeModal('modal-reveal');
+  await sb.from('connections').update({status: 'accepted', reveal_value: val})
+    .eq('id', currentRevealConnectionId);
+  showToast('RÉVÉLÉ ✓');
+  currentRevealConnectionId = null;
+  loadReceivedRequests();
+}
+
+async function acceptRevealCustom() {
+  closeModal('modal-reveal');
+  const val = prompt('Qu\'est-ce que tu veux révéler ?');
+  if (!val) return;
+  await sb.from('connections').update({status: 'accepted', reveal_value: val})
+    .eq('id', currentRevealConnectionId);
+  showToast('RÉVÉLÉ ✓');
+  currentRevealConnectionId = null;
+  loadReceivedRequests();
+}
+
+async function declineRequest(connectionId) {
+  await sb.from('connections').update({status: 'declined'}).eq('id', connectionId);
+  showToast('DEMANDE REFUSÉE');
+  loadReceivedRequests();
+}
+
+// ─── CONNECT MODAL (envoyer une demande) ───
 function openConnectModal(postId) {
   currentConnectPostId = postId;
   document.getElementById('modal-connect').classList.add('open');
@@ -713,7 +870,6 @@ async function doConnect(platform) {
   if (!error) showToast('DEMANDE ENVOYÉE ✓');
   else if (error.code === '23505') showToast('DÉJÀ ENVOYÉ !');
   currentConnectPostId = null;
-  loadFeed();
   loadConnectList();
 }
 
