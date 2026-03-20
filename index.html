@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RAW</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --cream:#F5F0E4;--ink:#1A1A18;--muted:#7A7670;
+  --joy:#F5C842;--rage:#E8392A;--calm:#4A90D9;
+  --sad:#7B6FD4;--weird:#3DB87A;--hype:#F07830;
+}
+html,body{height:100%;background:#111;font-family:'Space Mono',monospace;color:var(--ink)}
+.phone{max-width:390px;margin:0 auto;height:100vh;background:var(--cream);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E")}
+
+/* SCREENS */
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+
+/* TOPBAR */
+.topbar{padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--ink);flex-shrink:0}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:4px;line-height:1}
+.badge{background:var(--ink);color:var(--cream);font-size:9px;padding:4px 10px;letter-spacing:1.5px}
+
+/* AUTH SCREEN */
+.auth-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px}
+.auth-logo{font-family:'Bebas Neue',sans-serif;font-size:72px;letter-spacing:6px;line-height:1;margin-bottom:8px}
+.auth-sub{font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:48px;font-style:italic}
+.auth-label{font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:6px}
+.auth-input{width:100%;padding:12px 14px;border:1.5px solid var(--ink);background:transparent;font-family:'Space Mono',monospace;font-size:13px;color:var(--ink);margin-bottom:14px;outline:none}
+.auth-input:focus{border-color:var(--hype)}
+.auth-btn{width:100%;padding:15px;background:var(--ink);color:var(--cream);border:none;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;cursor:pointer;margin-bottom:10px;transition:.12s}
+.auth-btn:hover{opacity:.85}
+.auth-btn.secondary{background:transparent;color:var(--ink);border:1.5px solid var(--ink);font-size:16px}
+.auth-err{font-size:10px;color:var(--rage);letter-spacing:1px;margin-bottom:10px;display:none}
+
+/* QBANNER */
+.qbanner{background:var(--ink);color:var(--cream);padding:14px 20px;position:relative;overflow:hidden;flex-shrink:0}
+.qbanner-label{font-size:8px;letter-spacing:3px;color:#666;margin-bottom:5px}
+.qbanner-text{font-size:13px;font-style:italic;line-height:1.55;max-width:82%}
+.qbanner-deco{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-family:'Bebas Neue',sans-serif;font-size:72px;color:var(--joy);opacity:.8;line-height:1}
+
+/* COUNTDOWN */
+.countdown{padding:7px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(26,26,24,.12);font-size:9px;letter-spacing:2px;color:var(--muted);flex-shrink:0}
+.ctime{color:var(--rage);font-weight:700}
+
+/* EMO FILTER */
+.emo-filter{padding:10px 20px;display:flex;gap:7px;overflow-x:auto;border-bottom:1px solid rgba(26,26,24,.12);flex-shrink:0;scrollbar-width:none}
+.emo-filter::-webkit-scrollbar{display:none}
+.etag{display:flex;align-items:center;gap:5px;padding:4px 11px;border:1.5px solid var(--ink);font-size:10px;cursor:pointer;white-space:nowrap;background:transparent;font-family:'Space Mono',monospace;letter-spacing:.5px;transition:.12s;flex-shrink:0;color:var(--ink)}
+.etag.on{background:var(--ink);color:var(--cream)}
+.edot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* FEED */
+.feed{flex:1;overflow-y:auto;padding:14px 20px 90px;display:flex;flex-direction:column;gap:14px}
+.feed::-webkit-scrollbar{display:none}
+.empty-feed{padding:60px 0;text-align:center;font-size:10px;color:var(--muted);letter-spacing:2px;line-height:2}
+.pcard{border:1.5px solid var(--ink);background:var(--cream)}
+.pthumb{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;filter:contrast(1.05) saturate(.9)}
+.pthumb-ph{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:2px}
+.pfoot{padding:9px 13px;display:flex;align-items:center;justify-content:space-between;border-top:1.5px solid var(--ink)}
+.ptime{font-size:9px;color:var(--muted);letter-spacing:1px}
+.pright{display:flex;align-items:center;gap:10px}
+.pemo{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700}
+.cbtn{padding:4px 12px;border:1.5px solid var(--ink);background:transparent;font-size:9px;font-family:'Space Mono',monospace;cursor:pointer;letter-spacing:1px;transition:.12s}
+.cbtn:hover{background:var(--ink);color:var(--cream)}
+.sent-badge{background:var(--weird);color:var(--cream);font-size:9px;padding:4px 10px;letter-spacing:1px}
+
+/* POST SCREEN */
+.pscroll{flex:1;overflow-y:auto;padding:20px 20px 90px;display:flex;flex-direction:column;gap:18px}
+.pscroll::-webkit-scrollbar{display:none}
+.qremind{background:var(--ink);color:var(--cream);padding:15px 17px}
+.qremind-l{font-size:8px;letter-spacing:3px;color:#666;margin-bottom:6px}
+.qremind-t{font-size:12px;font-style:italic;line-height:1.6}
+.slabel{font-size:8px;letter-spacing:3px;color:var(--muted);margin-bottom:8px}
+.upload-zone{border:2px dashed var(--ink);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:.12s;position:relative;overflow:hidden}
+.upload-zone:hover{background:rgba(26,26,24,.04)}
+.uz-icon{font-family:'Bebas Neue',sans-serif;font-size:56px;color:rgba(26,26,24,.18);line-height:1}
+.uz-label{font-size:10px;letter-spacing:2px;color:var(--muted)}
+#prev-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.epicker{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.eopt{padding:10px 6px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;gap:5px;font-size:10px;font-weight:700;cursor:pointer;transition:.12s;background:transparent;font-family:'Space Mono',monospace;letter-spacing:.5px}
+.eopt.sel[data-e="joy"]{background:var(--joy);border-color:var(--joy);color:var(--ink)}
+.eopt.sel[data-e="rage"]{background:var(--rage);border-color:var(--rage);color:var(--cream)}
+.eopt.sel[data-e="calm"]{background:var(--calm);border-color:var(--calm);color:var(--cream)}
+.eopt.sel[data-e="sad"]{background:var(--sad);border-color:var(--sad);color:var(--cream)}
+.eopt.sel[data-e="weird"]{background:var(--weird);border-color:var(--weird);color:var(--cream)}
+.eopt.sel[data-e="hype"]{background:var(--hype);border-color:var(--hype);color:var(--cream)}
+.sbtn{width:100%;padding:16px;background:var(--ink);color:var(--cream);border:none;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;cursor:pointer;transition:.12s}
+.sbtn:hover{opacity:.85}
+.sbtn:disabled{opacity:.3;cursor:not-allowed}
+.already-posted{background:rgba(61,184,122,.12);border:1.5px solid var(--weird);padding:16px;text-align:center;font-size:11px;color:var(--weird);letter-spacing:1px;line-height:1.8}
+
+/* CONNECT SCREEN */
+.cscroll{flex:1;overflow-y:auto;padding:20px 20px 90px}
+.cscroll::-webkit-scrollbar{display:none}
+.ch{margin-bottom:20px}
+.ch-title{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:2px;line-height:1;margin-bottom:6px}
+.ch-sub{font-size:10px;color:var(--muted);line-height:1.7}
+.ccard{border:1.5px solid var(--ink);margin-bottom:12px}
+.ctop{display:flex}
+.cph{width:80px;height:80px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-right:1.5px solid var(--ink)}
+.cph img{width:100%;height:100%;object-fit:cover}
+.cinfo{padding:11px 13px;flex:1}
+.cemo{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;margin-bottom:3px}
+.ctime2{font-size:9px;color:var(--muted);letter-spacing:1px}
+.cactions{padding:9px 13px;border-top:1.5px solid var(--ink);display:flex;gap:7px}
+.abtn{flex:1;padding:8px 4px;border:1.5px solid var(--ink);font-size:9px;font-family:'Space Mono',monospace;letter-spacing:.5px;cursor:pointer;background:transparent;transition:.12s;text-align:center}
+.abtn.pri{background:var(--ink);color:var(--cream)}
+.abtn:not(.pri):hover{background:rgba(26,26,24,.06)}
+
+/* VOTE BANNER */
+.vote-banner{background:var(--joy);border-bottom:2px solid var(--ink);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.vote-label{font-size:9px;letter-spacing:2px;color:var(--ink);font-weight:700}
+.vote-btn{padding:5px 14px;border:1.5px solid var(--ink);background:transparent;font-size:9px;font-family:'Space Mono',monospace;cursor:pointer;letter-spacing:1px;font-weight:700;transition:.12s}
+.vote-btn:hover{background:var(--ink);color:var(--cream)}
+
+/* BOTTOM NAV */
+.bnav{position:absolute;bottom:0;left:0;right:0;background:var(--cream);border-top:2px solid var(--ink);display:flex;z-index:50}
+.nbtn{flex:1;padding:13px 0;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:transparent;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--muted);transition:.12s;border-right:1px solid var(--ink);position:relative}
+.nbtn:last-child{border-right:none}
+.nbtn.active{background:var(--ink);color:var(--cream)}
+.nicon{font-size:16px;line-height:1}
+.ndot{width:6px;height:6px;background:var(--rage);border-radius:50%;position:absolute;top:9px;right:22px}
+
+/* MODAL */
+.modal-bg{display:none;position:absolute;inset:0;background:rgba(26,26,24,.78);z-index:200;align-items:flex-end}
+.modal-bg.open{display:flex}
+.modal-panel{background:var(--cream);width:100%;padding:26px 22px 36px;border-top:2px solid var(--ink)}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;margin-bottom:5px}
+.modal-sub{font-size:10px;color:var(--muted);line-height:1.7;margin-bottom:20px}
+.ropts{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.ropt{padding:13px 15px;border:1.5px solid var(--ink);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:.12s;background:transparent;font-family:'Space Mono',monospace;text-align:left;width:100%}
+.ropt:hover{background:var(--ink);color:var(--cream)}
+.ropt:hover .rhint{color:rgba(245,240,228,.55)}
+.rplat{font-weight:700;letter-spacing:1px}
+.rhint{font-size:9px;color:var(--muted)}
+.cancel{width:100%;padding:11px;border:none;background:transparent;font-size:10px;color:var(--muted);cursor:pointer;font-family:'Space Mono',monospace;letter-spacing:1px}
+
+/* TOAST */
+.toast{position:absolute;top:80px;left:20px;right:20px;background:var(--ink);color:var(--cream);padding:14px 18px;font-size:11px;letter-spacing:1px;z-index:300;display:none;border-left:4px solid var(--weird)}
+.toast.show{display:block;animation:tin .3s ease}
+@keyframes tin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+/* LOADER */
+.loader{position:absolute;inset:0;background:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:400;gap:16px}
+.loader-logo{font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:6px;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.loader-txt{font-size:9px;letter-spacing:3px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="phone">
+
+  <!-- LOADER -->
+  <div class="loader" id="loader">
+    <div class="loader-logo">RAW</div>
+    <div class="loader-txt">CHARGEMENT...</div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- AUTH SCREEN -->
+  <div class="screen" id="s-auth">
+    <div class="auth-wrap">
+      <div class="auth-logo">RAW</div>
+      <div class="auth-sub">"post raw. nothing else."</div>
+
+      <div id="auth-login">
+        <div class="auth-label">TON PSEUDO</div>
+        <input class="auth-input" id="login-username" type="text" placeholder="ex: nathan_b" autocomplete="off">
+        <div class="auth-label">MOT DE PASSE</div>
+        <input class="auth-input" id="login-password" type="password" placeholder="••••••••">
+        <div class="auth-err" id="login-err"></div>
+        <button class="auth-btn" onclick="doLogin()">CONNEXION</button>
+        <button class="auth-btn secondary" onclick="showRegister()">CRÉER UN COMPTE</button>
+      </div>
+
+      <div id="auth-register" style="display:none">
+        <div class="auth-label">CHOISIS UN PSEUDO</div>
+        <input class="auth-input" id="reg-username" type="text" placeholder="ex: nathan_b" autocomplete="off">
+        <div class="auth-label">TON LYCÉE</div>
+        <input class="auth-input" id="reg-school" type="text" placeholder="ex: Camille Jullian Bordeaux">
+        <div class="auth-label">MOT DE PASSE</div>
+        <input class="auth-input" id="reg-password" type="password" placeholder="min 6 caractères">
+        <div class="auth-err" id="reg-err"></div>
+        <button class="auth-btn" onclick="doRegister()">CRÉER MON COMPTE</button>
+        <button class="auth-btn secondary" onclick="showLogin()">J'AI DÉJÀ UN COMPTE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEED SCREEN -->
+  <div class="screen" id="s-feed">
+    <div class="topbar">
+      <div class="logo">RAW</div>
+      <div class="badge" id="feed-badge">AUJOURD'HUI</div>
+    </div>
+    <div class="qbanner">
+      <div class="qbanner-label">QUESTION DU JOUR</div>
+      <div class="qbanner-text" id="qtext">Chargement...</div>
+      <div class="qbanner-deco">"</div>
+    </div>
+    <div class="countdown">
+      <span>DISPARAÎT DANS</span>
+      <span class="ctime" id="ctime">--:--:--</span>
+    </div>
+    <div class="emo-filter" id="emo-filter">
+      <button class="etag on" data-f="all">TOUT</button>
+      <button class="etag" data-f="joy"><span class="edot" style="background:var(--joy)"></span>JOIE</button>
+      <button class="etag" data-f="rage"><span class="edot" style="background:var(--rage)"></span>RAGE</button>
+      <button class="etag" data-f="calm"><span class="edot" style="background:var(--calm)"></span>CALME</button>
+      <button class="etag" data-f="sad"><span class="edot" style="background:var(--sad)"></span>TRISTESSE</button>
+      <button class="etag" data-f="weird"><span class="edot" style="background:var(--weird)"></span>BIZARRE</button>
+      <button class="etag" data-f="hype"><span class="edot" style="background:var(--hype)"></span>HYPE</button>
+    </div>
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <!-- POST SCREEN -->
+  <div class="screen" id="s-post">
+    <div class="topbar">
+      <div class="logo">RAW</div>
+      <div class="badge">POSTER</div>
+    </div>
+    <div class="pscroll">
+      <div class="qremind">
+        <div class="qremind-l">TA MISSION</div>
+        <div class="qremind-t" id="post-qtext">Chargement...</div>
+      </div>
+      <div id="already-posted-msg" style="display:none">
+        <div class="already-posted">✓ T'as déjà posté aujourd'hui !<br>Reviens demain pour une nouvelle question.</div>
+      </div>
+      <div id="post-form">
+        <div>
+          <div class="slabel">TA PHOTO</div>
+          <div class="upload-zone" id="uzone" onclick="document.getElementById('finput').click()">
+            <div class="uz-icon">+</div>
+            <div class="uz-label">APPUIE POUR CHOISIR</div>
+            <img id="prev-img">
+          </div>
+          <input type="file" id="finput" accept="image/*" style="display:none">
+        </div>
+        <div>
+          <div class="slabel">TON ÉMOTION</div>
+          <div class="epicker">
+            <button class="eopt" data-e="joy"><span class="edot" style="background:var(--joy)"></span>JOIE</button>
+            <button class="eopt" data-e="rage"><span class="edot" style="background:var(--rage)"></span>RAGE</button>
+            <button class="eopt" data-e="calm"><span class="edot" style="background:var(--calm)"></span>CALME</button>
+            <button class="eopt" data-e="sad"><span class="edot" style="background:var(--sad)"></span>TRISTESSE</button>
+            <button class="eopt" data-e="weird"><span class="edot" style="background:var(--weird)"></span>BIZARRE</button>
+            <button class="eopt" data-e="hype"><span class="edot" style="background:var(--hype)"></span>HYPE</button>
+          </div>
+        </div>
+        <button class="sbtn" id="sbtn" disabled onclick="submitPost()">POSTER ANONYMEMENT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECT SCREEN -->
+  <div class="screen" id="s-connect">
+    <div class="topbar">
+      <div class="logo">RAW</div>
+      <div class="badge">CONNEXIONS</div>
+    </div>
+    <div class="vote-banner">
+      <span class="vote-label">VOTER POUR DEMAIN</span>
+      <button class="vote-btn" onclick="openVoteModal()">VOTER ›</button>
+    </div>
+    <div class="cscroll">
+      <div class="ch">
+        <div class="ch-title">QUELQU'UN T'A TOUCHÉ ?</div>
+        <div class="ch-sub">Ces personnes ont posté aujourd'hui.<br>Connecte si leur photo te parle.</div>
+      </div>
+      <div id="clist"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav" id="bnav" style="display:none">
+    <button class="nbtn active" id="nb-feed" onclick="goTo('feed')">
+      <span class="nicon">▦</span>FEED
+    </button>
+    <button class="nbtn" id="nb-post" onclick="goTo('post')">
+      <span class="nicon">◎</span>POSTER
+    </button>
+    <button class="nbtn" id="nb-connect" onclick="goTo('connect')">
+      <span class="nicon">◈</span>CONNECT
+      <span class="ndot" id="notif-dot" style="display:none"></span>
+    </button>
+  </div>
+
+  <!-- CONNECT MODAL -->
+  <div class="modal-bg" id="modal-connect">
+    <div class="modal-panel">
+      <div class="modal-title">CONNECTER ?</div>
+      <div class="modal-sub">Cette personne reçoit une demande anonyme.<br>Elle choisit ce qu'elle révèle si elle accepte.</div>
+      <div class="ropts">
+        <button class="ropt" onclick="doConnect('instagram')"><span class="rplat">INSTAGRAM</span><span class="rhint">Partager son @</span></button>
+        <button class="ropt" onclick="doConnect('snapchat')"><span class="rplat">SNAPCHAT</span><span class="rhint">Partager son snap</span></button>
+        <button class="ropt" onclick="doConnect('numero')"><span class="rplat">NUMÉRO</span><span class="rhint">Partager son 06</span></button>
+        <button class="ropt" onclick="doConnect('message')"><span class="rplat">JUSTE DIRE BONJOUR</span><span class="rhint">Message anonyme</span></button>
+      </div>
+      <button class="cancel" onclick="closeModal('modal-connect')">ANNULER</button>
+    </div>
+  </div>
+
+  <!-- VOTE MODAL -->
+  <div class="modal-bg" id="modal-vote">
+    <div class="modal-panel">
+      <div class="modal-title">DEMAIN ON RÉPOND À...</div>
+      <div class="modal-sub">Vote pour la question de demain.</div>
+      <div class="ropts" id="vote-opts"></div>
+      <button class="cancel" onclick="closeModal('modal-vote')">FERMER</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://kziblspndogwopjejtvo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_x9nneW1bS_g1bpXKmOu7mQ_4Wdu0Gtl';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const EMO = {
+  joy:{l:'JOIE',c:'#F5C842'},rage:{l:'RAGE',c:'#E8392A'},
+  calm:{l:'CALME',c:'#4A90D9'},sad:{l:'TRISTESSE',c:'#7B6FD4'},
+  weird:{l:'BIZARRE',c:'#3DB87A'},hype:{l:'HYPE',c:'#F07830'}
+};
+const BGS=['#D8CEB6','#C9B99A','#BFB08A','#D4C5A9','#E0CFA8','#C5B898'];
+const SYM=['◆','▲','●','■','✦','◉','▼','◈'];
+
+let currentUser = null;
+let currentQuestion = null;
+let activeFilter = 'all';
+let currentConnectPostId = null;
+let myPostToday = null;
+let feedPosts = [];
+
+// ─── INIT ───
+async function init() {
+  // Récupère session locale
+  const stored = localStorage.getItem('raw_user');
+  if (stored) {
+    currentUser = JSON.parse(stored);
+    await loadApp();
+  } else {
+    hideLoader();
+    goScreen('auth');
+  }
+}
+
+function hideLoader() {
+  document.getElementById('loader').style.display = 'none';
+}
+
+// ─── AUTH ───
+function showRegister() {
+  document.getElementById('auth-login').style.display = 'none';
+  document.getElementById('auth-register').style.display = 'block';
+}
+function showLogin() {
+  document.getElementById('auth-register').style.display = 'none';
+  document.getElementById('auth-login').style.display = 'block';
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim().toLowerCase();
+  const school = document.getElementById('reg-school').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const err = document.getElementById('reg-err');
+  err.style.display = 'none';
+
+  if (!username || !school || !password) { showErr(err, 'REMPLIS TOUT STP'); return; }
+  if (password.length < 6) { showErr(err, 'MOT DE PASSE TROP COURT'); return; }
+
+  // Vérifie si pseudo dispo
+  const {data: existing} = await sb.from('users').select('id').eq('username', username).single();
+  if (existing) { showErr(err, 'CE PSEUDO EST DÉJÀ PRIS'); return; }
+
+  const {data, error} = await sb.from('users').insert({username, school}).select().single();
+  if (error) { showErr(err, 'ERREUR: ' + error.message); return; }
+
+  // Stocke le password hashé localement (simple pour un proto)
+  const userData = {...data, password: btoa(password)};
+  localStorage.setItem('raw_user', JSON.stringify(userData));
+  currentUser = userData;
+  await loadApp();
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const password = document.getElementById('login-password').value;
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+
+  if (!username || !password) { showErr(err, 'REMPLIS TOUT STP'); return; }
+
+  const {data, error} = await sb.from('users').select('*').eq('username', username).single();
+  if (error || !data) { showErr(err, 'PSEUDO INTROUVABLE'); return; }
+
+  // Vérifie password (stocké en base64 dans localStorage)
+  const stored = localStorage.getItem('raw_user_' + username);
+  if (stored) {
+    const u = JSON.parse(stored);
+    if (u.password !== btoa(password)) { showErr(err, 'MOT DE PASSE INCORRECT'); return; }
+  }
+
+  const userData = {...data, password: btoa(password)};
+  localStorage.setItem('raw_user', JSON.stringify(userData));
+  localStorage.setItem('raw_user_' + username, JSON.stringify(userData));
+  currentUser = userData;
+  await loadApp();
+}
+
+function showErr(el, msg) {
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ─── LOAD APP ───
+async function loadApp() {
+  await Promise.all([loadQuestion(), checkMyPost()]);
+  hideLoader();
+  document.getElementById('bnav').style.display = 'flex';
+  goScreen('feed');
+  goTo('feed');
+  startCountdown();
+  loadFeed();
+  loadConnectList();
+  setupRealtime();
+}
+
+async function loadQuestion() {
+  const today = new Date().toISOString().split('T')[0];
+  const {data} = await sb.from('questions').select('*').eq('date', today).single();
+  if (data) {
+    currentQuestion = data;
+    document.getElementById('qtext').textContent = '"' + data.text + '"';
+    document.getElementById('post-qtext').textContent = '"' + data.text + '"';
+  }
+}
+
+async function checkMyPost() {
+  if (!currentUser) return;
+  const today = new Date().toISOString().split('T')[0];
+  const {data} = await sb.from('posts')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .gte('created_at', today + 'T00:00:00')
+    .single();
+  myPostToday = data || null;
+  updatePostScreen();
+}
+
+function updatePostScreen() {
+  const form = document.getElementById('post-form');
+  const msg = document.getElementById('already-posted-msg');
+  if (myPostToday) {
+    form.style.display = 'none';
+    msg.style.display = 'block';
+  } else {
+    form.style.display = 'flex';
+    form.style.flexDirection = 'column';
+    form.style.gap = '18px';
+    msg.style.display = 'none';
+  }
+}
+
+// ─── FEED ───
+async function loadFeed() {
+  const feed = document.getElementById('feed');
+  feed.innerHTML = '<div class="empty-feed">CHARGEMENT...</div>';
+
+  let query = sb.from('posts').select('*').order('created_at', {ascending: false});
+  if (activeFilter !== 'all') query = query.eq('emotion', activeFilter);
+
+  const {data, error} = await query;
+  if (error) { feed.innerHTML = '<div class="empty-feed">ERREUR DE CHARGEMENT</div>'; return; }
+
+  feedPosts = data || [];
+  renderFeed();
+}
+
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  const filtered = activeFilter === 'all' ? feedPosts : feedPosts.filter(p => p.emotion === activeFilter);
+
+  if (filtered.length === 0) {
+    feed.innerHTML = '<div class="empty-feed">AUCUN POST POUR L\'INSTANT<br>SOIS LE PREMIER !</div>';
+    return;
+  }
+
+  feed.innerHTML = filtered.map((p, i) => {
+    const e = EMO[p.emotion] || EMO.weird;
+    const isMe = p.user_id === currentUser?.id;
+    const sym = SYM[i % SYM.length];
+    const bg = BGS[i % BGS.length];
+    const time = timeSince(p.created_at);
+    const imgHtml = p.photo_url
+      ? `<img class="pthumb" src="${p.photo_url}" loading="lazy">`
+      : `<div class="pthumb-ph" style="background:${bg};color:rgba(26,26,24,.16)">${sym}</div>`;
+    const connHtml = isMe
+      ? `<button class="cbtn" style="border-color:var(--rage);color:var(--rage)" onclick="deletePost('${p.id}','${p.photo_url}')">SUPPRIMER</button>`
+      : `<button class="cbtn" onclick="openConnectModal('${p.id}')">CONNECT</button>`;
+    return `<div class="pcard">
+      ${imgHtml}
+      <div class="pfoot">
+        <span class="ptime">${time}</span>
+        <div class="pright">
+          <div class="pemo"><span class="edot" style="background:${e.c}"></span>${e.l}</div>
+          ${connHtml}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── DELETE POST ───
+async function deletePost(postId, photoUrl) {
+  if (!confirm('Supprimer ton post ? Cette action est irréversible.')) return;
+  
+  // Supprime en DB d'abord
+  const {error} = await sb.from('posts').delete().eq('id', postId).eq('user_id', currentUser.id);
+  
+  if (error) { showToast('ERREUR: ' + error.message); return; }
+
+  // Supprime la photo du storage
+  if (photoUrl) {
+    const parts = photoUrl.split('/photos/');
+    if (parts[1]) await sb.storage.from('photos').remove([decodeURIComponent(parts[1])]);
+  }
+
+  myPostToday = null;
+  feedPosts = feedPosts.filter(p => p.id !== postId);
+  updatePostScreen();
+  renderFeed();
+  showToast('POST SUPPRIMÉ ✓');
+}
+
+// ─── REALTIME ───
+function setupRealtime() {
+  sb.channel('posts-feed')
+    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'posts'}, payload => {
+      feedPosts.unshift(payload.new);
+      renderFeed();
+    })
+    .subscribe();
+}
+
+// ─── EMO FILTER ───
+document.getElementById('emo-filter').addEventListener('click', e => {
+  const btn = e.target.closest('.etag');
+  if (!btn) return;
+  document.querySelectorAll('.etag').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  activeFilter = btn.dataset.f;
+  renderFeed();
+});
+
+// ─── UPLOAD ───
+document.getElementById('finput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  // Compression avant upload
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = h * MAX / w; w = MAX; }
+      if (h > MAX) { w = w * MAX / h; h = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.75);
+      document.getElementById('prev-img').src = compressed;
+      document.getElementById('prev-img').style.display = 'block';
+      document.getElementById('uzone').style.border = '2px solid var(--ink)';
+      checkSubmit();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+let selEmo = null;
+document.querySelectorAll('.eopt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.eopt').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    selEmo = btn.dataset.e;
+    checkSubmit();
+  });
+});
+
+function checkSubmit() {
+  const hasImg = document.getElementById('prev-img').src && document.getElementById('prev-img').style.display !== 'none';
+  document.getElementById('sbtn').disabled = !(hasImg && selEmo);
+}
+
+// ─── SUBMIT POST ───
+async function submitPost() {
+  if (!currentUser || !currentQuestion) return;
+  const btn = document.getElementById('sbtn');
+  btn.disabled = true;
+  btn.textContent = 'UPLOAD...';
+
+  const imgData = document.getElementById('prev-img').src;
+  const base64 = imgData.split(',')[1];
+  const blob = await fetch(imgData).then(r => r.blob());
+  const filename = `${currentUser.id}_${Date.now()}.jpg`;
+
+  // Upload photo dans Storage
+  const {data: storageData, error: storageErr} = await sb.storage
+    .from('photos')
+    .upload(filename, blob, {contentType: 'image/jpeg', upsert: false});
+
+  if (storageErr) {
+    showToast('ERREUR UPLOAD: ' + storageErr.message);
+    btn.disabled = false; btn.textContent = 'POSTER ANONYMEMENT';
+    return;
+  }
+
+  const {data: urlData} = sb.storage.from('photos').getPublicUrl(filename);
+
+  // Insérer le post en DB
+  const {data: post, error: postErr} = await sb.from('posts').insert({
+    user_id: currentUser.id,
+    question_id: currentQuestion.id,
+    photo_url: urlData.publicUrl,
+    emotion: selEmo
+  }).select().single();
+
+  if (postErr) {
+    showToast('ERREUR POST: ' + postErr.message);
+    btn.disabled = false; btn.textContent = 'POSTER ANONYMEMENT';
+    return;
+  }
+
+  myPostToday = post;
+  updatePostScreen();
+  selEmo = null;
+  document.getElementById('prev-img').style.display = 'none';
+  document.getElementById('prev-img').src = '';
+  document.getElementById('uzone').style.border = '2px dashed var(--ink)';
+  document.querySelectorAll('.eopt').forEach(b => b.classList.remove('sel'));
+  btn.textContent = 'POSTER ANONYMEMENT';
+  showToast('POSTÉ ANONYMEMENT ✓');
+  goTo('feed');
+}
+
+// ─── CONNECT LIST ───
+async function loadConnectList() {
+  const today = new Date().toISOString().split('T')[0];
+  const {data} = await sb.from('posts')
+    .select('*')
+    .gte('created_at', today + 'T00:00:00')
+    .neq('user_id', currentUser?.id || '')
+    .order('created_at', {ascending: false});
+
+  const clist = document.getElementById('clist');
+  if (!data || data.length === 0) {
+    clist.innerHTML = '<div style="font-size:10px;color:var(--muted);letter-spacing:1px">AUCUN POST AUJOURD\'HUI ENCORE</div>';
+    return;
+  }
+
+  clist.innerHTML = data.map((p, i) => {
+    const e = EMO[p.emotion] || EMO.weird;
+    const bg = BGS[i % BGS.length];
+    const sym = SYM[i % SYM.length];
+    const time = timeSince(p.created_at);
+    const thumbHtml = p.photo_url
+      ? `<img src="${p.photo_url}" style="width:80px;height:80px;object-fit:cover">`
+      : `<div style="width:80px;height:80px;background:${bg};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:rgba(26,26,24,.18)">${sym}</div>`;
+    return `<div class="ccard" id="cc${p.id}">
+      <div class="ctop">
+        <div class="cph">${thumbHtml}</div>
+        <div class="cinfo">
+          <div class="cemo"><span class="edot" style="background:${e.c}"></span>${e.l}</div>
+          <div class="ctime2">${time}</div>
+        </div>
+      </div>
+      <div class="cactions">
+        <button class="abtn pri" onclick="openConnectModal('${p.id}')">CONNECTER</button>
+        <button class="abtn" onclick="document.getElementById('cc${p.id}').style.opacity='.3'">PASSER</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── CONNECT MODAL ───
+function openConnectModal(postId) {
+  currentConnectPostId = postId;
+  document.getElementById('modal-connect').classList.add('open');
+}
+
+async function doConnect(platform) {
+  if (!currentConnectPostId || !currentUser) return;
+  const {error} = await sb.from('connections').insert({
+    from_user_id: currentUser.id,
+    to_post_id: currentConnectPostId,
+    platform
+  });
+  closeModal('modal-connect');
+  if (!error) showToast('DEMANDE ENVOYÉE ✓');
+  else if (error.code === '23505') showToast('DÉJÀ ENVOYÉ !');
+  currentConnectPostId = null;
+  loadFeed();
+  loadConnectList();
+}
+
+// ─── VOTE ───
+const TOMORROW_QUESTIONS = [
+  'Prends en photo quelque chose de cassé mais encore utile',
+  'C\'est quoi ton endroit secret préféré ?',
+  'Le truc que tu fais quand personne te regarde'
+];
+let myVote = null;
+
+async function openVoteModal() {
+  const today = new Date().toISOString().split('T')[0];
+  const {data: votes} = await sb.from('votes').select('question_text').eq('vote_date', today);
+  const counts = {};
+  TOMORROW_QUESTIONS.forEach(q => counts[q] = 0);
+  (votes || []).forEach(v => { if (counts[v.question_text] !== undefined) counts[v.question_text]++; });
+
+  const {data: myVoteData} = await sb.from('votes')
+    .select('question_text')
+    .eq('user_id', currentUser.id)
+    .eq('vote_date', today)
+    .single();
+  myVote = myVoteData?.question_text || null;
+
+  document.getElementById('vote-opts').innerHTML = TOMORROW_QUESTIONS.map(q => `
+    <button class="ropt" onclick="castVote('${q.replace(/'/g,"\\'")}'"
+      style="${myVote === q ? 'background:var(--ink);color:var(--cream)' : ''}">
+      <span style="font-size:10px;font-style:italic;flex:1;text-align:left">${q}</span>
+      <span style="font-size:12px;font-weight:700;margin-left:10px">${counts[q]}</span>
+    </button>
+  `).join('');
+  document.getElementById('modal-vote').classList.add('open');
+}
+
+async function castVote(question) {
+  if (myVote) { showToast('T\'AS DÉJÀ VOTÉ !'); return; }
+  const today = new Date().toISOString().split('T')[0];
+  const {error} = await sb.from('votes').insert({
+    user_id: currentUser.id,
+    question_text: question,
+    vote_date: today
+  });
+  if (!error) { myVote = question; showToast('VOTE ENREGISTRÉ ✓'); openVoteModal(); }
+}
+
+// ─── NAV ───
+function goTo(s) {
+  document.querySelectorAll('.screen').forEach(sc => sc.classList.remove('active'));
+  document.querySelectorAll('.nbtn').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-' + s).classList.add('active');
+  document.getElementById('nb-' + s).classList.add('active');
+  if (s === 'connect') { loadConnectList(); }
+  if (s === 'feed') { loadFeed(); }
+}
+
+function goScreen(s) {
+  document.querySelectorAll('.screen').forEach(sc => sc.classList.remove('active'));
+  document.getElementById('s-' + s).classList.add('active');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ─── COUNTDOWN ───
+function startCountdown() {
+  function tick() {
+    const now = new Date();
+    const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
+    const diff = midnight - now;
+    const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+    const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+    const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    document.getElementById('ctime').textContent = h + ':' + m + ':' + s;
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+// ─── TOAST ───
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── UTILS ───
+function timeSince(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'à l\'instant';
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h}h`;
+  return `il y a ${Math.floor(h / 24)}j`;
+}
+
+// ─── START ───
+init();
+</script>
+</body>
+</html>
