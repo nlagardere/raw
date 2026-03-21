@@ -2,472 +2,31 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>RAW</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --cream:#F5F0E4;--ink:#1A1A18;--muted:#7A7670;
-  --joy:#FFD600;--rage:#FF2D2D;--calm:#4FC3F7;
-  --sad:#B39DDB;--weird:#69F0AE;--hype:#FF6D00;
-}
-html,body{height:100%;background:#0a0a0a;font-family:'Space Mono',monospace;color:var(--ink)}
-
-/* ── PHONE SHELL ── */
-.phone{max-width:390px;margin:0 auto;height:100vh;background:var(--cream);position:relative;overflow:hidden;display:flex;flex-direction:column}
-
-/* ── GRAIN ── */
-.grain{position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.4;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E")}
-
-/* ── SCREENS ── */
-.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
-.screen.active{display:flex}
-
-/* ════════════════════════════════
-   AUTH SCREEN — NeatGradient bg
-════════════════════════════════ */
-#s-auth{
-  position:relative;
-  background:#000;
-  overflow:hidden;
-}
-#neat-canvas{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  z-index:0;
-}
-
-.auth-wrap{
-  position:relative;
-  z-index:1;
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  padding:36px 28px 40px;
-  gap:0;
-}
-
-/* Glass card */
-.auth-card{
-  background:rgba(0,0,0,0.55);
-  backdrop-filter:blur(22px) saturate(1.4);
-  -webkit-backdrop-filter:blur(22px) saturate(1.4);
-  border:1px solid rgba(255,255,255,0.10);
-  border-radius:2px;
-  padding:32px 26px 28px;
-}
-
-.auth-logo-wrap{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  margin-bottom:24px;
-  gap:10px;
-}
-.auth-logo-canvas{
-  width:88px;height:88px;
-  border-radius:6px;
-  display:block;
-}
-.auth-tagline{
-  font-size:10px;
-  letter-spacing:3px;
-  color:rgba(255,255,255,0.45);
-  text-transform:lowercase;
-  font-style:italic;
-}
-
-.auth-label{
-  font-size:8px;
-  letter-spacing:3px;
-  color:rgba(255,255,255,0.40);
-  margin-bottom:6px;
-  margin-top:14px;
-}
-.auth-label:first-of-type{margin-top:0}
-
-.auth-input{
-  width:100%;
-  padding:11px 14px;
-  border:1px solid rgba(255,255,255,0.14);
-  background:rgba(255,255,255,0.06);
-  font-family:'Space Mono',monospace;
-  font-size:13px;
-  color:#fff;
-  outline:none;
-  border-radius:1px;
-  transition:.15s;
-  letter-spacing:.5px;
-}
-.auth-input::placeholder{color:rgba(255,255,255,0.20)}
-.auth-input:focus{
-  border-color:rgba(255,255,255,0.35);
-  background:rgba(255,255,255,0.10);
-}
-
-.auth-btn{
-  width:100%;
-  padding:14px;
-  background:#fff;
-  color:#000;
-  border:none;
-  font-family:'Bebas Neue',sans-serif;
-  font-size:20px;
-  letter-spacing:5px;
-  cursor:pointer;
-  margin-top:20px;
-  transition:.12s;
-  border-radius:1px;
-}
-.auth-btn:hover{opacity:.88}
-.auth-btn:active{transform:scale(.98)}
-
-.auth-btn.secondary{
-  background:transparent;
-  color:rgba(255,255,255,0.55);
-  border:1px solid rgba(255,255,255,0.15);
-  font-size:12px;
-  padding:11px;
-  margin-top:10px;
-  letter-spacing:2px;
-}
-.auth-btn.secondary:hover{
-  background:rgba(255,255,255,0.06);
-  color:rgba(255,255,255,0.8);
-}
-
-.auth-err{
-  font-size:9px;
-  color:var(--rage);
-  letter-spacing:1px;
-  margin-top:8px;
-  display:none;
-}
-
-/* Emotion dots strip */
-.emo-dots{
-  display:flex;
-  justify-content:center;
-  gap:8px;
-  margin-top:22px;
-}
-.emo-dot{
-  width:8px;height:8px;
-  border-radius:50%;
-  opacity:.7;
-  animation:emopulse 3s ease-in-out infinite;
-}
-.emo-dot:nth-child(1){background:var(--joy);animation-delay:0s}
-.emo-dot:nth-child(2){background:var(--rage);animation-delay:.5s}
-.emo-dot:nth-child(3){background:var(--calm);animation-delay:1s}
-.emo-dot:nth-child(4){background:var(--sad);animation-delay:1.5s}
-.emo-dot:nth-child(5){background:var(--weird);animation-delay:2s}
-.emo-dot:nth-child(6){background:var(--hype);animation-delay:2.5s}
-@keyframes emopulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
-
-/* ════════════════════════════════
-   TOPBAR
-════════════════════════════════ */
-.topbar{
-  padding:16px 20px 12px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  border-bottom:2px solid var(--ink);
-  flex-shrink:0;
-  background:var(--cream);
-}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;line-height:1}
-.badge{
-  background:var(--ink);
-  color:var(--cream);
-  font-size:8px;
-  padding:4px 10px;
-  letter-spacing:2px;
-}
-
-/* ════════════════════════════════
-   QBANNER
-════════════════════════════════ */
-.qbanner{
-  background:var(--ink);
-  color:var(--cream);
-  padding:14px 20px;
-  position:relative;
-  overflow:hidden;
-  flex-shrink:0;
-}
-.qbanner-label{font-size:7px;letter-spacing:3px;color:rgba(245,240,228,.35);margin-bottom:5px}
-.qbanner-text{font-size:12px;font-style:italic;line-height:1.6;max-width:84%;color:var(--cream)}
-.qbanner-deco{
-  position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  font-family:'Bebas Neue',sans-serif;font-size:80px;color:var(--joy);
-  opacity:.15;line-height:1;pointer-events:none;
-}
-
-/* ════════════════════════════════
-   COUNTDOWN
-════════════════════════════════ */
-.countdown{
-  padding:7px 20px;
-  display:flex;justify-content:space-between;align-items:center;
-  border-bottom:1px solid rgba(26,26,24,.12);
-  font-size:8px;letter-spacing:2px;color:var(--muted);
-  flex-shrink:0;
-}
-.ctime{color:var(--rage);font-weight:700;font-size:9px}
-
-/* ════════════════════════════════
-   EMO FILTER
-════════════════════════════════ */
-.emo-filter{
-  padding:10px 20px;
-  display:flex;gap:6px;
-  overflow-x:auto;
-  border-bottom:1px solid rgba(26,26,24,.12);
-  flex-shrink:0;
-  scrollbar-width:none;
-}
-.emo-filter::-webkit-scrollbar{display:none}
-.etag{
-  display:flex;align-items:center;gap:5px;
-  padding:5px 11px;
-  border:1.5px solid rgba(26,26,24,.25);
-  font-size:9px;cursor:pointer;white-space:nowrap;
-  background:transparent;font-family:'Space Mono',monospace;
-  letter-spacing:.5px;transition:.12s;flex-shrink:0;color:var(--muted);
-}
-.etag.on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
-.etag:hover:not(.on){border-color:var(--ink);color:var(--ink)}
-.edot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-
-/* ════════════════════════════════
-   FEED
-════════════════════════════════ */
-.feed{flex:1;overflow-y:auto;padding:14px 20px 90px;display:flex;flex-direction:column;gap:12px}
-.feed::-webkit-scrollbar{display:none}
-.empty-feed{padding:60px 0;text-align:center;font-size:9px;color:var(--muted);letter-spacing:2px;line-height:2.4}
-
-.pcard{border:1.5px solid var(--ink)}
-.pthumb{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;filter:contrast(1.06) saturate(.88)}
-.pthumb-ph{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:2px}
-.pfoot{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1.5px solid var(--ink)}
-.ptime{font-size:8px;color:var(--muted);letter-spacing:1px}
-.pright{display:flex;align-items:center;gap:10px}
-.pemo{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:700}
-.cbtn{
-  padding:4px 12px;
-  border:1.5px solid var(--ink);
-  background:transparent;
-  font-size:8px;font-family:'Space Mono',monospace;
-  cursor:pointer;letter-spacing:1px;transition:.12s;
-}
-.cbtn:hover{background:var(--ink);color:var(--cream)}
-
-/* ════════════════════════════════
-   POST SCREEN
-════════════════════════════════ */
-.pscroll{flex:1;overflow-y:auto;padding:20px 20px 90px;display:flex;flex-direction:column;gap:18px}
-.pscroll::-webkit-scrollbar{display:none}
-.qremind{background:var(--ink);color:var(--cream);padding:14px 16px}
-.qremind-l{font-size:7px;letter-spacing:3px;color:rgba(245,240,228,.35);margin-bottom:6px}
-.qremind-t{font-size:12px;font-style:italic;line-height:1.6}
-.slabel{font-size:8px;letter-spacing:3px;color:var(--muted);margin-bottom:8px}
-.upload-zone{
-  border:2px dashed rgba(26,26,24,.3);
-  aspect-ratio:1;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:10px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;
-}
-.upload-zone:hover{border-color:var(--ink);background:rgba(26,26,24,.03)}
-.uz-icon{font-family:'Bebas Neue',sans-serif;font-size:56px;color:rgba(26,26,24,.15);line-height:1}
-.uz-label{font-size:9px;letter-spacing:2px;color:var(--muted)}
-#prev-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
-.epicker{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.eopt{
-  padding:10px 4px;
-  border:1.5px solid rgba(26,26,24,.2);
-  display:flex;align-items:center;justify-content:center;gap:5px;
-  font-size:9px;font-weight:700;cursor:pointer;transition:.15s;
-  background:transparent;font-family:'Space Mono',monospace;letter-spacing:.5px;color:var(--muted);
-}
-.eopt:hover{border-color:var(--ink);color:var(--ink)}
-.eopt.sel[data-e="joy"]{background:var(--joy);border-color:var(--joy);color:#000}
-.eopt.sel[data-e="rage"]{background:var(--rage);border-color:var(--rage);color:#fff}
-.eopt.sel[data-e="calm"]{background:var(--calm);border-color:var(--calm);color:#000}
-.eopt.sel[data-e="sad"]{background:var(--sad);border-color:var(--sad);color:#fff}
-.eopt.sel[data-e="weird"]{background:var(--weird);border-color:var(--weird);color:#000}
-.eopt.sel[data-e="hype"]{background:var(--hype);border-color:var(--hype);color:#fff}
-.sbtn{
-  width:100%;padding:16px;
-  background:var(--ink);color:var(--cream);
-  border:none;font-family:'Bebas Neue',sans-serif;
-  font-size:20px;letter-spacing:4px;cursor:pointer;transition:.12s;
-}
-.sbtn:hover{opacity:.85}
-.sbtn:disabled{opacity:.25;cursor:not-allowed}
-.already-posted{
-  background:rgba(105,240,174,.08);
-  border:1.5px solid var(--weird);
-  padding:20px;text-align:center;
-  font-size:10px;color:var(--weird);letter-spacing:1px;line-height:2;
-}
-
-/* ════════════════════════════════
-   CONNECT SCREEN
-════════════════════════════════ */
-.cscroll{flex:1;overflow-y:auto;padding:20px 20px 90px}
-.cscroll::-webkit-scrollbar{display:none}
-.ch-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;line-height:1;margin-bottom:5px}
-.ch-sub{font-size:9px;color:var(--muted);line-height:1.8;margin-bottom:14px}
-.ccard{border:1.5px solid var(--ink);margin-bottom:11px}
-.ctop{display:flex}
-.cph{width:80px;height:80px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-right:1.5px solid var(--ink);overflow:hidden}
-.cph img{width:100%;height:100%;object-fit:cover}
-.cinfo{padding:11px 13px;flex:1}
-.cemo{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:700;margin-bottom:3px}
-.ctime2{font-size:8px;color:var(--muted);letter-spacing:1px}
-.cactions{padding:8px 12px;border-top:1.5px solid var(--ink);display:flex;gap:7px}
-.abtn{
-  flex:1;padding:8px 4px;
-  border:1.5px solid var(--ink);
-  font-size:8px;font-family:'Space Mono',monospace;
-  letter-spacing:.5px;cursor:pointer;background:transparent;
-  transition:.12s;text-align:center;color:var(--ink);
-}
-.abtn.pri{background:var(--ink);color:var(--cream)}
-.abtn:not(.pri):hover{background:rgba(26,26,24,.06)}
-.req-section{margin-bottom:22px}
-.req-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;margin-bottom:4px}
-.req-sub{font-size:9px;color:var(--muted);line-height:1.7;margin-bottom:12px}
-.req-card{border:1.5px solid var(--ink);margin-bottom:9px}
-.req-top{padding:11px 13px;display:flex;align-items:center;justify-content:space-between}
-.req-label{font-size:10px;font-weight:700;letter-spacing:.5px}
-.req-platform{font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:2px}
-.req-actions{padding:8px 12px;border-top:1.5px solid var(--ink);display:flex;gap:7px}
-.req-revealed{padding:11px 13px;background:rgba(105,240,174,.08);border-top:1.5px solid var(--weird);font-size:9px;letter-spacing:1px;color:var(--weird)}
-.req-sent{padding:11px 13px;border-top:1px solid rgba(26,26,24,.1);font-size:9px;color:var(--muted);letter-spacing:1px}
-.sent-badge{background:var(--weird);color:#000;font-size:8px;padding:3px 9px;letter-spacing:1px}
-.divider{border:none;border-top:2px solid var(--ink);margin:20px 0}
-.vote-banner{
-  background:var(--joy);
-  border-bottom:2px solid var(--ink);
-  padding:9px 20px;
-  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
-}
-.vote-label{font-size:8px;letter-spacing:2px;color:var(--ink);font-weight:700}
-.vote-btn{
-  padding:5px 13px;border:1.5px solid var(--ink);
-  background:transparent;font-size:8px;font-family:'Space Mono',monospace;
-  cursor:pointer;letter-spacing:1px;font-weight:700;transition:.12s;color:var(--ink);
-}
-.vote-btn:hover{background:var(--ink);color:var(--joy)}
-
-/* ════════════════════════════════
-   BOTTOM NAV
-════════════════════════════════ */
-.bnav{
-  position:absolute;bottom:0;left:0;right:0;
-  background:var(--cream);border-top:2px solid var(--ink);
-  display:flex;z-index:50;
-}
-.nbtn{
-  flex:1;padding:12px 0;
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  cursor:pointer;border:none;background:transparent;
-  font-family:'Space Mono',monospace;font-size:7px;letter-spacing:1px;
-  color:var(--muted);transition:.12s;
-  border-right:1px solid var(--ink);position:relative;
-}
-.nbtn:last-child{border-right:none}
-.nbtn.active{background:var(--ink);color:var(--cream)}
-.nicon{font-size:15px;line-height:1}
-.ndot{
-  width:6px;height:6px;background:var(--rage);border-radius:50%;
-  position:absolute;top:8px;right:20px;
-}
-
-/* ════════════════════════════════
-   MODALS
-════════════════════════════════ */
-.modal-bg{
-  display:none;position:absolute;inset:0;
-  background:rgba(10,10,10,.82);z-index:200;align-items:flex-end;
-}
-.modal-bg.open{display:flex}
-.modal-panel{
-  background:var(--cream);width:100%;
-  padding:24px 22px 36px;
-  border-top:2px solid var(--ink);
-}
-.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:5px}
-.modal-sub{font-size:9px;color:var(--muted);line-height:1.8;margin-bottom:18px}
-.ropts{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-.ropt{
-  padding:12px 14px;border:1.5px solid var(--ink);
-  font-size:10px;cursor:pointer;
-  display:flex;align-items:center;justify-content:space-between;
-  transition:.12s;background:transparent;
-  font-family:'Space Mono',monospace;text-align:left;width:100%;color:var(--ink);
-}
-.ropt:hover{background:var(--ink);color:var(--cream)}
-.ropt:hover .rhint{color:rgba(245,240,228,.45)}
-.rplat{font-weight:700;letter-spacing:1px;font-size:10px}
-.rhint{font-size:8px;color:var(--muted)}
-.cancel{
-  width:100%;padding:10px;border:none;
-  background:transparent;font-size:9px;color:var(--muted);
-  cursor:pointer;font-family:'Space Mono',monospace;letter-spacing:1px;
-  margin-top:2px;
-}
-
-/* ════════════════════════════════
-   TOAST
-════════════════════════════════ */
-.toast{
-  position:absolute;top:72px;left:16px;right:16px;
-  background:var(--ink);color:var(--cream);
-  padding:13px 16px;font-size:10px;letter-spacing:1px;
-  z-index:300;display:none;
-  border-left:3px solid var(--weird);
-}
-.toast.show{display:block;animation:tin .25s ease}
-@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-
-/* ════════════════════════════════
-   LOADER
-════════════════════════════════ */
-.loader{
-  position:absolute;inset:0;background:#000;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  z-index:400;gap:20px;overflow:hidden;
-}
-#loader-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
-.loader-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px}
-.loader-logo{
-  font-family:'Bebas Neue',sans-serif;font-size:72px;letter-spacing:8px;
-  color:#fff;animation:pulse 1.4s ease-in-out infinite;
-  text-shadow:0 0 40px rgba(255,255,255,.3);
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
-.loader-txt{font-size:8px;letter-spacing:4px;color:rgba(255,255,255,.3)}
-.loader-dots{display:flex;gap:10px}
-.loader-dot{width:7px;height:7px;border-radius:50%;animation:emopulse 2s ease-in-out infinite}
-.loader-dot:nth-child(1){background:var(--joy);animation-delay:0s}
-.loader-dot:nth-child(2){background:var(--rage);animation-delay:.33s}
-.loader-dot:nth-child(3){background:var(--calm);animation-delay:.66s}
-.loader-dot:nth-child(4){background:var(--sad);animation-delay:.99s}
-.loader-dot:nth-child(5){background:var(--weird);animation-delay:1.32s}
-.loader-dot:nth-child(6){background:var(--hype);animation-delay:1.65s}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- SVG Liquid Glass distortion filter -->
+<svg id="liquid-glass-filter" xmlns="http://www.w3.org/2000/svg"
+     style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none">
+  <defs>
+    <filter id="lg-distort" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.006 0.006" numOctaves="2" seed="42" result="noise"/>
+      <feGaussianBlur in="noise" stdDeviation="1.5" result="blurred"/>
+      <feDisplacementMap in="SourceGraphic" in2="blurred" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="lg-distort-sm" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01 0.01" numOctaves="2" seed="7" result="noise"/>
+      <feGaussianBlur in="noise" stdDeviation="1" result="blurred"/>
+      <feDisplacementMap in="SourceGraphic" in2="blurred" scale="8" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
 <div class="grain"></div>
 <div class="phone">
 
@@ -491,9 +50,8 @@ html,body{height:100%;background:#0a0a0a;font-family:'Space Mono',monospace;colo
   <!-- ══ AUTH SCREEN ══ -->
   <div class="screen" id="s-auth">
     <canvas id="neat-canvas"></canvas>
-
     <div class="auth-wrap">
-      <div class="auth-card">
+      <div class="auth-card lg lg-heavy">
         <div class="auth-logo-wrap">
           <canvas id="logo-canvas" class="auth-logo-canvas" width="600" height="600"></canvas>
           <div class="auth-tagline">"post raw. nothing else."</div>
@@ -624,19 +182,30 @@ html,body{height:100%;background:#0a0a0a;font-family:'Space Mono',monospace;colo
     </div>
   </div>
 
-  <!-- BOTTOM NAV -->
-  <div class="bnav" id="bnav" style="display:none">
-    <button class="nbtn active" id="nb-feed" onclick="goTo('feed')">
-      <span class="nicon">▦</span>FEED
-    </button>
-    <button class="nbtn" id="nb-post" onclick="goTo('post')">
-      <span class="nicon">◎</span>POSTER
-    </button>
-    <button class="nbtn" id="nb-connect" onclick="goTo('connect')">
-      <span class="nicon">◈</span>CONNECT
-      <span class="ndot" id="notif-dot" style="display:none"></span>
-    </button>
-  </div>
+  <!-- ══ BOTTOM NAV ══ -->
+  <nav class="bnav" id="bnav" style="display:none">
+    <div class="bnav-buttons">
+
+      <button class="nbtn active" id="nb-feed" onclick="goTo('feed')">
+        <span class="nicon">⚡</span>
+        <span>Feed</span>
+      </button>
+
+      <button class="nbtn" id="nb-post" onclick="goTo('post')">
+        <span class="nicon">✦</span>
+        <span>Post</span>
+      </button>
+
+      <button class="nbtn" id="nb-connect" onclick="goTo('connect')">
+        <span class="nicon">◈</span>
+        <span>Connect</span>
+        <span class="ndot" id="notif-dot" style="display:none"></span>
+      </button>
+
+    </div>
+    <!-- Zone home indicator iOS — 0px sur desktop/Android -->
+    <div class="bnav-home"></div>
+  </nav>
 
   <!-- MODAL CONNECT -->
   <div class="modal-bg" id="modal-connect">
@@ -677,64 +246,24 @@ html,body{height:100%;background:#0a0a0a;font-family:'Space Mono',monospace;colo
 
 <script type="module">
 import { NeatGradient } from "https://esm.sh/@firecms/neat@1.0.10";
-
-// ── NEAT on AUTH ──
-const authCanvas = document.getElementById('neat-canvas');
 const neatConfig = {
   colors:[
-    {color:'#FFD600',enabled:true},
-    {color:'#FF2D2D',enabled:true},
-    {color:'#4FC3F7',enabled:true},
-    {color:'#B39DDB',enabled:true},
-    {color:'#69F0AE',enabled:true},
-    {color:'#FF6D00',enabled:true},
+    {color:'#FF3C5F',enabled:true},
+    {color:'#A855F7',enabled:true},
+    {color:'#38BDF8',enabled:true},
+    {color:'#FFE234',enabled:true},
+    {color:'#34EEA0',enabled:true},
+    {color:'#FF7A2F',enabled:true},
   ],
-  speed:3,
-  horizontalPressure:4,
-  verticalPressure:2,
-  waveFrequencyX:2,
-  waveFrequencyY:3,
-  waveAmplitude:5,
-  shadows:3,
-  highlights:5,
-  colorBrightness:1,
-  colorSaturation:7,
-  wireframe:false,
-  colorBlending:10,
-  backgroundColor:'#000000',
-  backgroundAlpha:1,
-  grainScale:3,
-  grainSparsity:0.2,
-  grainIntensity:0.08,
-  grainSpeed:1,
-  resolution:1.5,
-  flowDistortionA:2.4,
-  flowDistortionB:1.4,
-  flowScale:2.9,
-  flowEase:0.32,
-  flowEnabled:true,
+  speed:3,horizontalPressure:4,verticalPressure:2,
+  waveFrequencyX:2,waveFrequencyY:3,waveAmplitude:5,
+  shadows:3,highlights:5,colorBrightness:1,colorSaturation:7,
+  wireframe:false,colorBlending:10,backgroundColor:'#08060F',backgroundAlpha:1,
+  grainScale:3,grainSparsity:0.2,grainIntensity:0.06,grainSpeed:1,resolution:1.5,
+  flowDistortionA:2.4,flowDistortionB:1.4,flowScale:2.9,flowEase:0.32,flowEnabled:true,
 };
-let neatGradient = null;
-try {
-  neatGradient = new NeatGradient({ ref: authCanvas, ...neatConfig });
-} catch(e) { console.warn('NeatGradient:', e); }
-
-// ── NEAT on LOADER ──
-const loaderCanvas = document.getElementById('loader-canvas');
-let loaderGradient = null;
-try {
-  loaderGradient = new NeatGradient({
-    ref: loaderCanvas,
-    ...neatConfig,
-    speed: 5,
-    colorSaturation: 9,
-    grainIntensity: 0,
-  });
-} catch(e) {}
-
-// ── Export to window for non-module scripts ──
-window._neatLoaded = true;
-window._destroyLoader = () => { if(loaderGradient) loaderGradient.destroy(); };
+try { new NeatGradient({ ref: document.getElementById('neat-canvas'), ...neatConfig }); } catch(e) {}
+try { new NeatGradient({ ref: document.getElementById('loader-canvas'), ...neatConfig, speed:5, grainIntensity:0 }); } catch(e) {}
 </script>
 
 <script>
@@ -743,11 +272,11 @@ const SUPABASE_KEY = 'sb_publishable_x9nneW1bS_g1bpXKmOu7mQ_4Wdu0Gtl';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const EMO = {
-  joy:{l:'JOIE',c:'#FFD600'},rage:{l:'RAGE',c:'#FF2D2D'},
-  calm:{l:'CALME',c:'#4FC3F7'},sad:{l:'TRISTESSE',c:'#B39DDB'},
-  weird:{l:'BIZARRE',c:'#69F0AE'},hype:{l:'HYPE',c:'#FF6D00'}
+  joy:{l:'JOIE',c:'#FFE234'},rage:{l:'RAGE',c:'#FF3C5F'},
+  calm:{l:'CALME',c:'#38BDF8'},sad:{l:'TRISTESSE',c:'#A78BFA'},
+  weird:{l:'BIZARRE',c:'#34EEA0'},hype:{l:'HYPE',c:'#FF7A2F'}
 };
-const BGS=['#D8CEB6','#C9B99A','#BFB08A','#D4C5A9','#E0CFA8','#C5B898'];
+const BGS=['#1a1228','#12181f','#0e1a14','#1a1220','#1a180e','#101820'];
 const SYM=['◆','▲','●','■','✦','◉','▼','◈'];
 
 let currentUser=null,currentQuestion=null,activeFilter='all';
@@ -767,10 +296,10 @@ async function init() {
 }
 
 function hideLoader() {
-  if(window._destroyLoader) window._destroyLoader();
-  document.getElementById('loader').style.opacity='0';
-  document.getElementById('loader').style.transition='opacity .4s ease';
-  setTimeout(()=>document.getElementById('loader').style.display='none',400);
+  const l = document.getElementById('loader');
+  l.style.transition = 'opacity .5s ease';
+  l.style.opacity = '0';
+  setTimeout(() => l.style.display = 'none', 500);
 }
 
 // ─── AUTH ───
@@ -822,7 +351,7 @@ async function doLogin(){
   await loadApp();
 }
 
-function showErr(el,msg){el.textContent=msg;el.style.display='block'}
+function showErr(el,msg){el.textContent=msg;el.style.display='block';}
 
 // ─── LOAD APP ───
 async function loadApp(){
@@ -830,7 +359,9 @@ async function loadApp(){
   hideLoader();
   document.getElementById('bnav').style.display='flex';
   goScreen('feed');
-  goTo('feed');
+  // sync active nav button
+  document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nb-feed').classList.add('active');
   startCountdown();
   loadFeed();
   loadConnectList();
@@ -859,9 +390,9 @@ function updatePostScreen(){
   const form=document.getElementById('post-form');
   const msg=document.getElementById('already-posted-msg');
   if(myPostToday){
-    form.style.display='none';msg.style.display='block';
+    form.style.display='none'; msg.style.display='block';
   } else {
-    form.style.display='flex';form.style.flexDirection='column';form.style.gap='18px';
+    form.style.display='flex'; form.style.flexDirection='column'; form.style.gap='18px';
     msg.style.display='none';
   }
 }
@@ -893,7 +424,7 @@ function renderFeed(){
     const time=timeSince(p.created_at);
     const imgHtml=p.photo_url
       ?`<img class="pthumb" src="${p.photo_url}" loading="lazy">`
-      :`<div class="pthumb-ph" style="background:${bg};color:rgba(26,26,24,.14)">${sym}</div>`;
+      :`<div class="pthumb-ph" style="background:${bg}">${sym}</div>`;
     const connHtml=isMe
       ?`<button class="cbtn" style="border-color:var(--rage);color:var(--rage)" onclick="deletePost('${p.id}','${p.photo_url}')">SUPPRIMER</button>`
       :`<button class="cbtn" onclick="openConnectModal('${p.id}')">CONNECT</button>`;
@@ -988,17 +519,20 @@ async function loadConnectList(){
   const {data:sent}=await sb.from('connections').select('to_post_id,status,reveal_value').eq('from_user_id',currentUser.id);
   const sentMap={};(sent||[]).forEach(c=>sentMap[c.to_post_id]=c);
   const clist=document.getElementById('clist');
-  if(!data||data.length===0){clist.innerHTML='<div style="font-size:9px;color:var(--muted);letter-spacing:1px;padding-bottom:20px">AUCUN POST AUJOURD\'HUI ENCORE</div>';}
-  else{
+  if(!data||data.length===0){
+    clist.innerHTML='<div style="font-size:9px;color:var(--muted);letter-spacing:1px;padding-bottom:20px">AUCUN POST AUJOURD\'HUI ENCORE</div>';
+  } else {
     clist.innerHTML=data.map((p,i)=>{
       const e=EMO[p.emotion]||EMO.weird;
       const bg=BGS[i%BGS.length];const sym=SYM[i%SYM.length];
       const time=timeSince(p.created_at);const conn=sentMap[p.id];
-      const thumbHtml=p.photo_url?`<img src="${p.photo_url}" style="width:80px;height:80px;object-fit:cover">`:`<div style="width:80px;height:80px;background:${bg};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:rgba(26,26,24,.15)">${sym}</div>`;
+      const thumbHtml=p.photo_url
+        ?`<img src="${p.photo_url}" style="width:100%;height:100%;object-fit:cover">`
+        :`<div style="width:100%;height:100%;background:${bg};display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:rgba(255,255,255,.12)">${sym}</div>`;
       let actHtml;
-      if(conn&&conn.status==='accepted'&&conn.reveal_value)actHtml=`<div class="req-revealed">✓ A RÉVÉLÉ : ${conn.reveal_value}</div>`;
-      else if(conn&&conn.status==='declined')actHtml=`<div class="req-sent">A REFUSÉ LA CONNEXION</div>`;
-      else if(conn)actHtml=`<div class="req-sent">DEMANDE ENVOYÉE — EN ATTENTE</div>`;
+      if(conn&&conn.status==='accepted'&&conn.reveal_value) actHtml=`<div class="req-revealed">✓ A RÉVÉLÉ : ${conn.reveal_value}</div>`;
+      else if(conn&&conn.status==='declined') actHtml=`<div class="req-sent">A REFUSÉ LA CONNEXION</div>`;
+      else if(conn) actHtml=`<div class="req-sent">DEMANDE ENVOYÉE — EN ATTENTE</div>`;
       else actHtml=`<div class="cactions"><button class="abtn pri" onclick="openConnectModal('${p.id}')">CONNECTER</button><button class="abtn" onclick="document.getElementById('cc${p.id}').style.opacity='.3'">PASSER</button></div>`;
       return `<div class="ccard" id="cc${p.id}"><div class="ctop"><div class="cph">${thumbHtml}</div><div class="cinfo"><div class="cemo"><span class="edot" style="background:${e.c}"></span>${e.l}</div><div class="ctime2">${time}</div></div></div>${actHtml}</div>`;
     }).join('');
@@ -1009,16 +543,23 @@ async function loadConnectList(){
 // ─── DEMANDES REÇUES ───
 let currentRevealConnectionId=null;
 async function loadReceivedRequests(){
-  if(!myPostToday){document.getElementById('req-list').innerHTML='<div style="font-size:9px;color:var(--muted);letter-spacing:1px">POSTE AUJOURD\'HUI POUR RECEVOIR DES DEMANDES</div>';return;}
+  if(!myPostToday){
+    document.getElementById('req-list').innerHTML='<div style="font-size:9px;color:var(--muted);letter-spacing:1px">POSTE AUJOURD\'HUI POUR RECEVOIR DES DEMANDES</div>';
+    return;
+  }
   const {data}=await sb.from('connections').select('*').eq('to_post_id',myPostToday.id).order('created_at',{ascending:false});
   const reqList=document.getElementById('req-list');
-  if(!data||data.length===0){reqList.innerHTML='<div style="font-size:9px;color:var(--muted);letter-spacing:1px">AUCUNE DEMANDE POUR L\'INSTANT</div>';document.getElementById('notif-dot').style.display='none';return;}
-  if(data.filter(c=>c.status==='pending').length>0)document.getElementById('notif-dot').style.display='block';
+  if(!data||data.length===0){
+    reqList.innerHTML='<div style="font-size:9px;color:var(--muted);letter-spacing:1px">AUCUNE DEMANDE POUR L\'INSTANT</div>';
+    document.getElementById('notif-dot').style.display='none';
+    return;
+  }
+  if(data.filter(c=>c.status==='pending').length>0) document.getElementById('notif-dot').style.display='block';
   const PL={instagram:'INSTAGRAM',snapchat:'SNAPCHAT',numero:'NUMÉRO',message:'MESSAGE ANONYME'};
   reqList.innerHTML=data.map(c=>{
     const plat=PL[c.platform]||c.platform.toUpperCase();const time=timeSince(c.created_at);
-    if(c.status==='accepted')return `<div class="req-card"><div class="req-top"><div><div class="req-label">DEMANDE ACCEPTÉE</div><div class="req-platform">VIA ${plat} · ${time}</div></div><span class="sent-badge">✓</span></div><div class="req-revealed">Tu as révélé : ${c.reveal_value}</div></div>`;
-    if(c.status==='declined')return `<div class="req-card"><div class="req-top"><div><div class="req-label" style="color:var(--muted)">REFUSÉE</div><div class="req-platform">VIA ${plat} · ${time}</div></div></div></div>`;
+    if(c.status==='accepted') return `<div class="req-card"><div class="req-top"><div><div class="req-label">DEMANDE ACCEPTÉE</div><div class="req-platform">VIA ${plat} · ${time}</div></div><span class="sent-badge">✓</span></div><div class="req-revealed">Tu as révélé : ${c.reveal_value}</div></div>`;
+    if(c.status==='declined') return `<div class="req-card"><div class="req-top"><div><div class="req-label" style="color:var(--muted)">REFUSÉE</div><div class="req-platform">VIA ${plat} · ${time}</div></div></div></div>`;
     return `<div class="req-card"><div class="req-top"><div><div class="req-label">QUELQU'UN VEUT TE CONNECTER</div><div class="req-platform">VIA ${plat} · ${time}</div></div></div><div class="req-actions"><button class="abtn pri" onclick="openRevealModal('${c.id}','${c.platform}')">RÉPONDRE</button><button class="abtn" onclick="declineRequest('${c.id}')">REFUSER</button></div></div>`;
   }).join('');
 }
@@ -1056,7 +597,8 @@ async function doConnect(platform){
   if(!currentConnectPostId||!currentUser)return;
   const {error}=await sb.from('connections').insert({from_user_id:currentUser.id,to_post_id:currentConnectPostId,platform});
   closeModal('modal-connect');
-  if(!error)showToast('DEMANDE ENVOYÉE ✓');else if(error.code==='23505')showToast('DÉJÀ ENVOYÉ !');
+  if(!error) showToast('DEMANDE ENVOYÉE ✓');
+  else if(error.code==='23505') showToast('DÉJÀ ENVOYÉ !');
   currentConnectPostId=null;loadConnectList();
 }
 
@@ -1077,9 +619,9 @@ async function openVoteModal(){
   myVote=myVoteData?.question_text||null;
   document.getElementById('vote-opts').innerHTML=TOMORROW_QUESTIONS.map(q=>`
     <button class="ropt" onclick="castVote('${q.replace(/'/g,"\\'")}'"
-      style="${myVote===q?'background:var(--ink);color:var(--cream)':''}">
-      <span style="font-size:9px;font-style:italic;flex:1;text-align:left;line-height:1.5">${q}</span>
-      <span style="font-size:13px;font-weight:700;font-family:'Bebas Neue',sans-serif;margin-left:10px">${counts[q]}</span>
+      style="${myVote===q?'border-color:var(--weird);color:var(--weird)':''}">
+      <span style="font-size:10px;font-style:italic;flex:1;text-align:left;line-height:1.6">${q}</span>
+      <span style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;margin-left:10px">${counts[q]}</span>
     </button>`).join('');
   document.getElementById('modal-vote').classList.add('open');
 }
@@ -1097,8 +639,8 @@ function goTo(s){
   document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('active'));
   document.getElementById('s-'+s).classList.add('active');
   document.getElementById('nb-'+s).classList.add('active');
-  if(s==='connect')loadConnectList();
-  if(s==='feed')loadFeed();
+  if(s==='connect') loadConnectList();
+  if(s==='feed') loadFeed();
 }
 function goScreen(s){
   document.querySelectorAll('.screen').forEach(sc=>sc.classList.remove('active'));
@@ -1137,33 +679,22 @@ function timeSince(dateStr){
 function renderLogo(){
   const c=document.getElementById('logo-canvas');if(!c)return;
   const ctx=c.getContext('2d');const W=600,H=600;
-  ctx.fillStyle='#111';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#08060F';ctx.fillRect(0,0,W,H);
+  // Gradient text
+  const grad=ctx.createLinearGradient(100,H/2,500,H/2);
+  grad.addColorStop(0,'#FF3C5F');grad.addColorStop(.5,'#A855F7');grad.addColorStop(1,'#38BDF8');
   ctx.font='900 210px "Arial Black",Impact,sans-serif';
-  ctx.fillStyle='#F5F0E4';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle=grad;ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText('RAW',W/2,H/2);
+  // Noise
   const imgData=ctx.getImageData(0,0,W,H);const data=imgData.data;
   for(let i=0;i<data.length;i+=4){
-    const noise=(Math.random()-.5)*90;
+    const noise=(Math.random()-.5)*50;
     data[i]=Math.min(255,Math.max(0,data[i]+noise));
     data[i+1]=Math.min(255,Math.max(0,data[i+1]+noise));
     data[i+2]=Math.min(255,Math.max(0,data[i+2]+noise));
   }
   ctx.putImageData(imgData,0,0);
-  const vign=ctx.getImageData(0,0,W,H);const vd=vign.data;
-  for(let y=0;y<H;y++){for(let x=0;x<W;x++){
-    const idx=(y*W+x)*4;const cx=x-W/2,cy=y-H/2;
-    const dist=Math.sqrt(cx*cx+cy*cy);const maxD=Math.sqrt(W*W/4+H*H/4);
-    const norm=dist/maxD;const burn=Math.pow(Math.max(0,norm-.4),2)*2.8;
-    vd[idx]=Math.max(0,vd[idx]-burn*200);
-    vd[idx+1]=Math.max(0,vd[idx+1]-burn*180);
-    vd[idx+2]=Math.max(0,vd[idx+2]-burn*160);
-  }}
-  ctx.putImageData(vign,0,0);
-  ctx.globalAlpha=0.04;ctx.fillStyle='#fff';
-  for(let y=0;y<H;y+=9)ctx.fillRect(0,y,W,2);
-  ctx.globalAlpha=0.07;
-  [[88,1],[234,2],[567,1],[789,1],[912,2]].forEach(([x,w])=>ctx.fillRect(x,0,w,H));
-  ctx.globalAlpha=1;
 }
 
 // ─── EXPOSE GLOBALS ───
